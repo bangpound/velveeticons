@@ -1,0 +1,20 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ */
+
+/**
+ * Implementation of hook_install()
+ */
+function velveeticons_install() {
+
+}
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function velveeticons_uninstall() {
+
+}

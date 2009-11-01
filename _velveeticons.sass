@@ -1,0 +1,7 @@
+// The relative path to the imagecache generating menu callback defined in the
+// module.
+!velveeticons_path      = "../../../../default/files/velveeticons"
+
+// A mixin that produces a background-image for an icon.
+=velveeticons-icon(!icon, !size = "16x16", !color = "000000ff", !bgcolor = "ffffff00")
+  background-image = "url('" + !velveeticons_path + "/" + !size + "_" + !color + "-" + !bgcolor + "/" + !icon + ".png')"

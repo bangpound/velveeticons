@@ -8,21 +8,21 @@
 /**
  * Implementation of hook_init()
  */
-function helveticons_init() {
+function velveeticons_init() {
   $setting = array();
-  $setting['helveticons'] = file_directory_path() .'/helveticons';
+  $setting['velveeticons'] = file_directory_path() .'/velveeticons';
   drupal_add_js($setting, 'setting');
 }
 
 /**
  * Implementation of hook_menu()
  */
-function helveticons_menu() {
+function velveeticons_menu() {
   $items = array();
 
-  // standard helveticons callback.
-  $items[file_directory_path() .'/helveticons'] = array(
-    'page callback' => 'helveticons_cache',
+  // standard velveeticons callback.
+  $items[file_directory_path() .'/velveeticons'] = array(
+    'page callback' => 'velveeticons_cache',
     'access callback' => TRUE,
     'type' => MENU_CALLBACK
   );
@@ -31,14 +31,14 @@ function helveticons_menu() {
 }
 
 /**
- * callback for handling public files helveticons requests.
+ * callback for handling public files velveeticons requests.
  */
-function helveticons_cache() {
-  extract(_helveticons_parse_path(func_get_args()));
-  _helveticons_cache($icon, $filetype, $width, $height, $color, $bgcolor);
+function velveeticons_cache() {
+  extract(_velveeticons_parse_path(func_get_args()));
+  _velveeticons_cache($icon, $filetype, $width, $height, $color, $bgcolor);
 }
 
-function _helveticons_parse_path($args) {
+function _velveeticons_parse_path($args) {
   $return = array();
 
   if ($arg = check_plain(array_shift($args))) {
@@ -78,22 +78,22 @@ function _helveticons_parse_path($args) {
 }
 
 /**
- * handle request validation and responses to helveticons requests.
+ * handle request validation and responses to velveeticons requests.
  */
-function _helveticons_cache($icon, $filetype = 'png', $width = 16, $height = 16, $color = array(0,0,0,255), $bgcolor = array(255,255,255,0)) {
+function _velveeticons_cache($icon, $filetype = 'png', $width = 16, $height = 16, $color = array(0,0,0,255), $bgcolor = array(255,255,255,0)) {
   // umm yeah deliver it early if it is there. especially useful
   // to prevent lock files from being created when delivering private files.
-  $dst = helveticons_create_path($icon, $filetype, $width, $height, $color, $bgcolor);
+  $dst = velveeticons_create_path($icon, $filetype, $width, $height, $color, $bgcolor);
   if (is_file($dst)) {
     imagecache_transfer($dst);
   }
 
   // preserve icon for watchdog.
-  $src = _helveticons_path($icon);
+  $src = _velveeticons_path($icon);
 
   // Check if the path to the file exists.
   if (!is_file($src)) {
-    watchdog('helveticons', '404: Unable to find %image ', array('%image' => $src), WATCHDOG_ERROR);
+    watchdog('velveeticons', '404: Unable to find %image ', array('%image' => $src), WATCHDOG_ERROR);
     header("HTTP/1.0 404 Not Found");
     exit;
   };
@@ -101,14 +101,14 @@ function _helveticons_cache($icon, $filetype = 'png', $width = 16, $height = 16,
   // Bail if the requested file isn't an image you can't request .php files
   // etc...
   if (!getimagesize($src)) {
-    watchdog('helveticons', '403: File is not an image %image ', array('%image' => $src), WATCHDOG_ERROR);
+    watchdog('velveeticons', '403: File is not an image %image ', array('%image' => $src), WATCHDOG_ERROR);
     header('HTTP/1.0 403 Forbidden');
     exit;
   }
 
-  $lockfile = helveticons_create_path($icon, $filetype, $width, $height, $color, $bgcolor, TRUE);
+  $lockfile = velveeticons_create_path($icon, $filetype, $width, $height, $color, $bgcolor, TRUE);
   if (file_exists($lockfile)) {
-    watchdog('helveticons', 'ImageCache already generating: %dst, Lock file: %tmp.', array('%dst' => $dst, '%tmp' => $lockfile), WATCHDOG_NOTICE);
+    watchdog('velveeticons', 'ImageCache already generating: %dst, Lock file: %tmp.', array('%dst' => $dst, '%tmp' => $lockfile), WATCHDOG_NOTICE);
     // 307 Temporary Redirect, to myself. Lets hope the image is done next time around.
     header('Location: '. request_uri(), TRUE, 307);
     exit;
@@ -168,7 +168,7 @@ function _helveticons_cache($icon, $filetype = 'png', $width = 16, $height = 16,
     imagecache_transfer($dst);
   }
   // Generate an error if image could not generate.
-  watchdog('helveticons', 'Failed generating an image from %image using helveticons preset %preset.', array('%image' => $path, '%preset' => $preset['presetname']), WATCHDOG_ERROR);
+  watchdog('velveeticons', 'Failed generating an image from %image using velveeticons preset %preset.', array('%image' => $path, '%preset' => $preset['presetname']), WATCHDOG_ERROR);
   header("HTTP/1.0 500 Internal Server Error");
   exit;
 }
@@ -176,7 +176,7 @@ function _helveticons_cache($icon, $filetype = 'png', $width = 16, $height = 16,
 /**
  * Implementation of hook_theme()
  */
-function helveticons_theme($existing, $type, $theme, $path) {
+function velveeticons_theme($existing, $type, $theme, $path) {
   return array(
     'helveticon' => array(
       'arguments' => array(
@@ -195,15 +195,15 @@ function helveticons_theme($existing, $type, $theme, $path) {
  * of the original image at @p $path, transformed with the given @p $preset.
  * Keep in mind that the image might not yet exist and won't be created.
  */
-function helveticons_create_path($icon, $filetype = 'png', $width = 16, $height = 16, $color = array(0,0,0,255), $bgcolor = array(255,255,255,0), $tmp = FALSE) {
-  $path = ($tmp ? file_directory_temp() : file_create_path()) .'/helveticons/';
+function velveeticons_create_path($icon, $filetype = 'png', $width = 16, $height = 16, $color = array(0,0,0,255), $bgcolor = array(255,255,255,0), $tmp = FALSE) {
+  $path = ($tmp ? file_directory_temp() : file_create_path()) .'/velveeticons/';
   $path .= $width .'x'. $height;
   $path .= '_';
   $path .= str_pad(dechex($color[0] * pow(2,24) + $color[1] * pow(2,16) + $color[2] * pow(2,8) + $color[3]), 8, '0', STR_PAD_LEFT);
   $path .= '-';
   $path .= str_pad(dechex($bgcolor[0] * pow(2,24) + $bgcolor[1] * pow(2,16) + $bgcolor[2] * pow(2,8) + $bgcolor[3]), 8, '0', STR_PAD_LEFT);
 
-  // todo: create the helveticons directory if it does not exist.
+  // todo: create the velveeticons directory if it does not exist.
   if (file_check_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
     return $path .'/'. $icon .'.'. $filetype;
   }
@@ -219,12 +219,12 @@ function theme_helveticon($name, $alt = '', $title = '', $attributes = array(), 
   if (!isset($attributes['height'])) {
     $attributes['height'] = 16;
   }
-  $path = helveticons_create_path($name, 'png', $attributes['width'], $attributes['height'], $color, $bgcolor);
+  $path = velveeticons_create_path($name, 'png', $attributes['width'], $attributes['height'], $color, $bgcolor);
   return theme('image', $path, $alt, $title, $attributes, FALSE);
 }
 
-function _helveticons_path($name) {
-  return drupal_get_path('module', 'helveticons'). '/images/512x512/'. $name .' 512x512.png';
+function _velveeticons_path($name) {
+  return drupal_get_path('module', 'velveeticons'). '/images/512x512/'. $name .' 512x512.png';
 }
 
 /**
@@ -248,8 +248,8 @@ function _helveticons_path($name) {
  *   the visitors browser will not be able to use a previously cached version.
  *   This is
  */
-function helveticons_create_url($icon, $filetype = 'png', $width = 16, $height = 16, $color = array(0,0,0,255), $bgcolor = array(255,255,255,0), $bypass_browser_cache = FALSE) {
-  $path = helveticons_create_path($icon, $filetype, $width, $height, $color, $bgcolor);
+function velveeticons_create_url($icon, $filetype = 'png', $width = 16, $height = 16, $color = array(0,0,0,255), $bgcolor = array(255,255,255,0), $bypass_browser_cache = FALSE) {
+  $path = velveeticons_create_path($icon, $filetype, $width, $height, $color, $bgcolor);
   if (module_exists('transliteration')) {
     $path = transliteration_get($path);
   }

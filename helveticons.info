@@ -1,0 +1,5 @@
+name = "Helveticons"
+description = "Helveticons"
+core = "6.x"
+dependencies[] = "imagecache_coloractions"
+dependencies[] = "imagecache_canvasactions"

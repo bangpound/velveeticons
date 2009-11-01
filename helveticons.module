@@ -1,0 +1,262 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ */
+
+/**
+ * Implementation of hook_init()
+ */
+function helveticons_init() {
+  $setting = array();
+  $setting['helveticons'] = file_directory_path() .'/helveticons';
+  drupal_add_js($setting, 'setting');
+}
+
+/**
+ * Implementation of hook_menu()
+ */
+function helveticons_menu() {
+  $items = array();
+
+  // standard helveticons callback.
+  $items[file_directory_path() .'/helveticons'] = array(
+    'page callback' => 'helveticons_cache',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK
+  );
+
+  return $items;
+}
+
+/**
+ * callback for handling public files helveticons requests.
+ */
+function helveticons_cache() {
+  extract(_helveticons_parse_path(func_get_args()));
+  _helveticons_cache($icon, $filetype, $width, $height, $color, $bgcolor);
+}
+
+function _helveticons_parse_path($args) {
+  $return = array();
+
+  if ($arg = check_plain(array_shift($args))) {
+    if (strstr($arg, '_')) {
+      list($dimensions, $colors) = explode('_', $arg);
+    }
+    else {
+      $dimensions = $arg;
+      $colors = '000000ff-ffffff00';
+    }
+
+    if (strstr($dimensions, 'x')) {
+      list($return['width'], $return['height']) = explode('x', $dimensions);
+      $return['width'] = (int) $return['width'];
+      $return['height'] = (int) $return['height'];
+    }
+    else {
+      $return['width'] = $return['height'] = (int) $dimensions;
+    }
+
+    if (strstr($colors, '-')) {
+      $colors = explode('-', $colors);
+      $return['color'] = imageapi_hex2rgba($colors[0]);
+      $return['bgcolor'] = imageapi_hex2rgba($colors[1]);
+    }
+    else {
+      $return['color'] = imageapi_hex2rgba($colors);
+      $return['bgcolor'] = array(255,255,255,0);
+    }
+  }
+
+  if ($arg = check_plain(array_shift($args))) {
+    list($return['icon'], $return['filetype']) = explode('.', $arg);
+  }
+
+  return $return;
+}
+
+/**
+ * handle request validation and responses to helveticons requests.
+ */
+function _helveticons_cache($icon, $filetype = 'png', $width = 16, $height = 16, $color = array(0,0,0,255), $bgcolor = array(255,255,255,0)) {
+  // umm yeah deliver it early if it is there. especially useful
+  // to prevent lock files from being created when delivering private files.
+  $dst = helveticons_create_path($icon, $filetype, $width, $height, $color, $bgcolor);
+  if (is_file($dst)) {
+    imagecache_transfer($dst);
+  }
+
+  // preserve icon for watchdog.
+  $src = _helveticons_path($icon);
+
+  // Check if the path to the file exists.
+  if (!is_file($src)) {
+    watchdog('helveticons', '404: Unable to find %image ', array('%image' => $src), WATCHDOG_ERROR);
+    header("HTTP/1.0 404 Not Found");
+    exit;
+  };
+
+  // Bail if the requested file isn't an image you can't request .php files
+  // etc...
+  if (!getimagesize($src)) {
+    watchdog('helveticons', '403: File is not an image %image ', array('%image' => $src), WATCHDOG_ERROR);
+    header('HTTP/1.0 403 Forbidden');
+    exit;
+  }
+
+  $lockfile = helveticons_create_path($icon, $filetype, $width, $height, $color, $bgcolor, TRUE);
+  if (file_exists($lockfile)) {
+    watchdog('helveticons', 'ImageCache already generating: %dst, Lock file: %tmp.', array('%dst' => $dst, '%tmp' => $lockfile), WATCHDOG_NOTICE);
+    // 307 Temporary Redirect, to myself. Lets hope the image is done next time around.
+    header('Location: '. request_uri(), TRUE, 307);
+    exit;
+  }
+  touch($lockfile);
+  // register the shtdown function to clean up lock files. by the time shutdown
+  // functions are being called the cwd has changed from document root, to
+  // server root so absolute paths must be used for files in shutdown functions.
+  register_shutdown_function('file_delete', realpath($lockfile));
+
+  $actions = array();
+
+  if ($bgcolor[3]) {
+    $actions[] = array(
+      'module' => 'imagecache_canvasactions',
+      'action' => 'canvasactions_definecanvas',
+      'data' => array(
+        'RGB' => array(
+          'red' => $bgcolor[0],
+          'green' => $bgcolor[1],
+          'blue' => $bgcolor[2],
+          'HEX' => str_pad(dechex($bgcolor[0] * pow(2,16) + $bgcolor[1] * pow(2,8) + $bgcolor[2]), 6, '0', STR_PAD_LEFT),
+        ),
+        'under' => TRUE,
+      ),
+    );
+  }
+
+  if ($color[3]) {
+    $actions[] = array(
+      'module' => 'imagecache_coloractions',
+      'action' => 'imagecache_colorshift',
+      'data' => array(
+        'RGB' => array(
+          'red' => $color[0],
+          'green' => $color[1],
+          'blue' => $color[2],
+          'HEX' => str_pad(dechex($color[0] * pow(2,16) + $color[1] * pow(2,8) + $color[2]), 6, '0', STR_PAD_LEFT),
+        ),
+      ),
+    );
+  }
+
+  $actions[] = array(
+    'module' => 'imagecache',
+    'action' => 'imagecache_scale',
+    'data' => array(
+      'width' => $width,
+      'height' => $height,
+      'upscale' => 0,
+    ),
+  );
+
+  // check if deriv exists... (file was created between apaches request handler and reaching this code)
+  // otherwise try to create the derivative.
+  if (file_exists($dst) || imagecache_build_derivative($actions, $src, $dst, 'imageapi_gd')) {
+    imagecache_transfer($dst);
+  }
+  // Generate an error if image could not generate.
+  watchdog('helveticons', 'Failed generating an image from %image using helveticons preset %preset.', array('%image' => $path, '%preset' => $preset['presetname']), WATCHDOG_ERROR);
+  header("HTTP/1.0 500 Internal Server Error");
+  exit;
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+function helveticons_theme($existing, $type, $theme, $path) {
+  return array(
+    'helveticon' => array(
+      'arguments' => array(
+        'name' => '',
+        'preset' => '',
+        'alt' => '',
+        'title' => '',
+        'attributes' => NULL,
+      )
+    )
+  );
+}
+
+/**
+ * Return a file system location that points to the location of a derivative
+ * of the original image at @p $path, transformed with the given @p $preset.
+ * Keep in mind that the image might not yet exist and won't be created.
+ */
+function helveticons_create_path($icon, $filetype = 'png', $width = 16, $height = 16, $color = array(0,0,0,255), $bgcolor = array(255,255,255,0), $tmp = FALSE) {
+  $path = ($tmp ? file_directory_temp() : file_create_path()) .'/helveticons/';
+  $path .= $width .'x'. $height;
+  $path .= '_';
+  $path .= str_pad(dechex($color[0] * pow(2,24) + $color[1] * pow(2,16) + $color[2] * pow(2,8) + $color[3]), 8, '0', STR_PAD_LEFT);
+  $path .= '-';
+  $path .= str_pad(dechex($bgcolor[0] * pow(2,24) + $bgcolor[1] * pow(2,16) + $bgcolor[2] * pow(2,8) + $bgcolor[3]), 8, '0', STR_PAD_LEFT);
+
+  // todo: create the helveticons directory if it does not exist.
+  if (file_check_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+    return $path .'/'. $icon .'.'. $filetype;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+function theme_helveticon($name, $alt = '', $title = '', $attributes = array(), $color = array(0,0,0,255), $bgcolor = array(255,255,255,0)) {
+  if (!isset($attributes['width'])) {
+    $attributes['width'] = 16;
+  }
+  if (!isset($attributes['height'])) {
+    $attributes['height'] = 16;
+  }
+  $path = helveticons_create_path($name, 'png', $attributes['width'], $attributes['height'], $color, $bgcolor);
+  return theme('image', $path, $alt, $title, $attributes, FALSE);
+}
+
+function _helveticons_path($name) {
+  return drupal_get_path('module', 'helveticons'). '/images/512x512/'. $name .' 512x512.png';
+}
+
+/**
+ * Return a URL that points to the location of a derivative of the
+ * original image transformed with the given preset.
+ *
+ * Special care is taken to make this work with the possible combinations of
+ * Clean URLs and public/private downloads. For example, when Clean URLs are not
+ * available an URL with query should be returned, like
+ * http://example.com/?q=files/imagecache/foo.jpg, so that imagecache is able
+ * intercept the request for this file.
+ *
+ * This code is very similar to the Drupal core function file_create_url(), but
+ * handles the case of Clean URLs and public downloads differently however.
+ *
+ * @param $presetname
+ * @param $filepath
+ *   String specifying the path to the image file.
+ * @param $bypass_browser_cache
+ *   A Boolean indicating that the URL for the image should be distinct so that
+ *   the visitors browser will not be able to use a previously cached version.
+ *   This is
+ */
+function helveticons_create_url($icon, $filetype = 'png', $width = 16, $height = 16, $color = array(0,0,0,255), $bgcolor = array(255,255,255,0), $bypass_browser_cache = FALSE) {
+  $path = helveticons_create_path($icon, $filetype, $width, $height, $color, $bgcolor);
+  if (module_exists('transliteration')) {
+    $path = transliteration_get($path);
+  }
+
+  $args = array('absolute' => TRUE, 'query' => empty($bypass_browser_cache) ? NULL : time());
+  switch (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC)) {
+    case FILE_DOWNLOADS_PUBLIC:
+      return url($GLOBALS['base_url'] . '/' . $path, $args);
+  }
+}

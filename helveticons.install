@@ -1,0 +1,20 @@
+<?php
+// $Id$ 
+
+/**
+ * @file 
+ */
+
+/**
+ * Implementation of hook_install() 
+ */
+function helveticons_install() {
+
+}
+
+/**
+ * Implementation of hook_uninstall() 
+ */
+function helveticons_uninstall() {
+
+}

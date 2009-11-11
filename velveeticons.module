@@ -178,7 +178,7 @@ function _velveeticons_cache($icon, $filetype = 'png', $width = 16, $height = 16
  */
 function velveeticons_theme($existing, $type, $theme, $path) {
   return array(
-    'helveticon' => array(
+    'velveeticon' => array(
       'arguments' => array(
         'name' => '',
         'preset' => '',
@@ -196,23 +196,21 @@ function velveeticons_theme($existing, $type, $theme, $path) {
  * Keep in mind that the image might not yet exist and won't be created.
  */
 function velveeticons_create_path($icon, $filetype = 'png', $width = 16, $height = 16, $color = array(0,0,0,255), $bgcolor = array(255,255,255,0), $tmp = FALSE) {
-  $path = ($tmp ? file_directory_temp() : file_create_path()) .'/velveeticons/';
-  $path .= $width .'x'. $height;
-  $path .= '_';
-  $path .= str_pad(dechex($color[0] * pow(2,24) + $color[1] * pow(2,16) + $color[2] * pow(2,8) + $color[3]), 8, '0', STR_PAD_LEFT);
-  $path .= '-';
-  $path .= str_pad(dechex($bgcolor[0] * pow(2,24) + $bgcolor[1] * pow(2,16) + $bgcolor[2] * pow(2,8) + $bgcolor[3]), 8, '0', STR_PAD_LEFT);
-
-  // todo: create the velveeticons directory if it does not exist.
+  $path = ($tmp ? file_directory_temp() : file_create_path()) .'/velveeticons';
   if (file_check_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
-    return $path .'/'. $icon .'.'. $filetype;
+    $path .= '/'. $width .'x'. $height;
+    $path .= '_';
+    $path .= str_pad(dechex($color[0] * pow(2,24) + $color[1] * pow(2,16) + $color[2] * pow(2,8) + $color[3]), 8, '0', STR_PAD_LEFT);
+    $path .= '-';
+    $path .= str_pad(dechex($bgcolor[0] * pow(2,24) + $bgcolor[1] * pow(2,16) + $bgcolor[2] * pow(2,8) + $bgcolor[3]), 8, '0', STR_PAD_LEFT);
+    if (file_check_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+      return $path .'/'. $icon .'.'. $filetype;
+    }
   }
-  else {
-    return FALSE;
-  }
+  return FALSE;
 }
 
-function theme_helveticon($name, $alt = '', $title = '', $attributes = array(), $color = array(0,0,0,255), $bgcolor = array(255,255,255,0)) {
+function theme_velveeticon($name, $alt = '', $title = '', $attributes = array(), $color = array(0,0,0,255), $bgcolor = array(255,255,255,0)) {
   if (!isset($attributes['width'])) {
     $attributes['width'] = 16;
   }

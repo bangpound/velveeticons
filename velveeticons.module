@@ -89,7 +89,7 @@ function _velveeticons_cache($icon, $filetype = 'png', $width = 16, $height = 16
   }
 
   // preserve icon for watchdog.
-  $src = _velveeticons_path($icon);
+  $src = _velveeticons_path($icon, $width .'x'. $height);
 
   // Check if the path to the file exists.
   if (!is_file($src)) {
@@ -217,12 +217,17 @@ function theme_velveeticon($name, $alt = '', $title = '', $attributes = array(),
   if (!isset($attributes['height'])) {
     $attributes['height'] = 16;
   }
-  $path = velveeticons_create_path($name, 'png', $attributes['width'], $attributes['height'], $color, $bgcolor);
+  $path = velveeticons_create_path(drupal_urlencode($name), 'png', $attributes['width'], $attributes['height'], $color, $bgcolor);
   return theme('image', $path, $alt, $title, $attributes, FALSE);
 }
 
-function _velveeticons_path($name) {
-  return drupal_get_path('module', 'velveeticons'). '/images/512x512/'. $name .' 512x512.png';
+function _velveeticons_path($name, $dimensions = '512x512') {
+  if ($dimensions == '16x16') {
+    return drupal_get_path('module', 'velveeticons'). '/images/'. $dimensions .'/'. $name .' '. $dimensions .'.png';
+  }
+  else {
+    return drupal_get_path('module', 'velveeticons'). '/images/512x512/'. $name .' 512x512.png';
+  }
 }
 
 /**

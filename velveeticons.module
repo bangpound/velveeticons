@@ -223,10 +223,10 @@ function theme_velveeticon($name, $alt = '', $title = '', $attributes = array(),
 
 function _velveeticons_path($name, $dimensions = '512x512') {
   if ($dimensions == '16x16') {
-    return drupal_get_path('module', 'velveeticons'). '/images/'. $dimensions .'/'. $name .' '. $dimensions .'.png';
+    return libraries_get_path('helveticons'). '/'. $dimensions .'/'. $name .' '. $dimensions .'.png';
   }
   else {
-    return drupal_get_path('module', 'velveeticons'). '/images/512x512/'. $name .' 512x512.png';
+    return libraries_get_path('helveticons'). '/512x512/'. $name .' 512x512.png';
   }
 }
 

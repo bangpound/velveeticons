@@ -1,7 +1,10 @@
 // The relative path to the imagecache generating menu callback defined in the
 // module.
-!velveeticons_path      = "../../../../default/files/velveeticons"
+$velveeticons_path: unquote("../../../../default/files/velveeticons");
 
 // A mixin that produces a background-image for an icon.
-=velveeticons-icon(!icon, !size = "16x16", !color = "000000ff", !bgcolor = "ffffff00")
-  background-image = "url('" + !velveeticons_path + "/" + !size + "_" + !color + "-" + !bgcolor + "/" + !icon + ".png')"
+@mixin velveeticons-icon($icon, $size: unquote("16x16"), $color: black, $bgcolor: rgba(255, 255, 255, 0), $important: "") {
+  $color_rgbahex: hex(red($color)) + hex(green($color)) + hex(blue($color)) + hex(alpha($color) * 255);
+  $bgcolor_rgbahex: hex(red($bgcolor)) + hex(green($bgcolor)) + hex(blue($bgcolor)) + hex(alpha($bgcolor) * 255);
+  background-image: unquote("url('") + $velveeticons_path + unquote("/") + $size + unquote("_") + $color_rgbahex + unquote("-") + $bgcolor_rgbahex + unquote("/") + $icon + unquote(".png')") unquote($important);
+  background-repeat: no-repeat; }

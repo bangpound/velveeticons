@@ -12,6 +12,7 @@ function velveeticons_init() {
   $setting = array();
   $setting['velveeticons'] = file_directory_path() .'/velveeticons';
   drupal_add_js($setting, 'setting');
+  drupal_add_js(drupal_get_path('module', 'velveeticons') .'/velveeticons.js');
 }
 
 /**

@@ -1,6 +1,4 @@
-/* 
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
-
+Drupal.theme.prototype.velveeticon = function (icon, width, height) {
+  var src = Drupal.settings.velveeticons + '/16x16/' + icon + '.png';
+  return $('<img />').attr('src', src);
+};
